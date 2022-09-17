@@ -96,6 +96,7 @@ wss.on('connection', function connection(ws) {
           .then((res) => {
             // Add the username to the result
             res['sender'] = data.message.sender
+            res['likes'] = 0
             broadcast(JSON.stringify({
               "event_type": "RECEIVE_GENERATION_RESULT",
               message: {
@@ -142,15 +143,25 @@ wss.on('connection', function connection(ws) {
         break;
 
       case 'SEND_LIKE_FORGERY':
-        console.log(generatedPaintings)
         const like_forgery_id = data.data['forgery_id']
         
         if (!(like_forgery_id in generatedPaintings)) {
           return
         }
-        // Get the painting iononst like_forgery_id = data.data['forgery_id']
+        // Get the painting like_forgery_id = data.data['forgery_id']
         generatedPaintings[like_forgery_id]['likes'] = generatedPaintings[like_forgery_id]['likes'] + 1
-        console.log("")
+        console.log(generatedPaintings)
+        broadcast(JSON.stringify({
+          "event_type": "RECEIVE_LIKE",
+          "data": {
+            "forgery_id": like_forgery_id,
+            "likes": generatedPaintings[like_forgery_id]['likes']
+          },
+          "message": {
+            'data':  "",
+            'sender': "Server"
+          }
+        }))
         break;
       case 'SEND_UNLIKE_FORGERY':
         // Get the
@@ -159,6 +170,18 @@ wss.on('connection', function connection(ws) {
           return
         }
         generatedPaintings[unlike_forgery_id]['likes'] = generatedPaintings[unlike_forgery_id]['likes'] - 1
+        broadcast(JSON.stringify({
+          "event_type": "RECEIVE_LIKE",
+          "data": {
+            "forgery_id": unlike_forgery_id,
+            "likes": generatedPaintings[unlike_forgery_id]['likes']
+          },
+          "message": {
+            'data':  "",
+            'sender': "Server"
+          }
+        }))
+        console.log(generatedPaintings)
         break;
     }
   });

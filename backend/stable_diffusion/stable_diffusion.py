@@ -1,5 +1,4 @@
 import torch
-from torch import autocast
 from diffusers import StableDiffusionPipeline
 import base64
 from PIL import Image
@@ -17,10 +16,9 @@ pipe = StableDiffusionPipeline.from_pretrained(model_id, use_auth_token=TOKEN, t
 pipe = pipe.to(device)
 
 
-# Returns next greater
-# multiple of 8
-def round_up_to_multiple_of_eight(x):
-    return ((x + 7) & (-8))
+# Returns next multiple of 64
+def round_up(x):
+    return x + (64-x)%64
 
 
 def resize_to_stable_diffusion_pipe_size(height, width):
@@ -30,12 +28,12 @@ def resize_to_stable_diffusion_pipe_size(height, width):
 
     if height < width:
         new_height = 512
-        new_width = int(width * (float(512) / height))
-        new_width = round_up_to_multiple_of_eight(new_width)
+        new_width = int(width * (512 / height))
+        new_width = round_up(new_width)
     else:
         new_width = 512
-        new_height = int(height * (float(512) / width))
-        new_height = round_up_to_multiple_of_eight(new_height)
+        new_height = int(height * (512 / width))
+        new_height = round_up(new_height)
     
     return new_height, new_width
 
@@ -44,14 +42,16 @@ def generate_image(prompt, n_images, n_iterations, height, width):
     print("Starting Stable Diffusion generation...")
 
     # resize to proper resolution for stable diffusion
-    new_height, new_width = resize_to_stable_diffusion_pipe_size(height, width)
-    print(prompt, n_images, new_height, new_width)
+    # new_height, new_width = resize_to_stable_diffusion_pipe_size(height, width)
+    # print(prompt, n_images, new_height, new_width)
+    # print('new_height', new_height, "new_width", new_width)
 
-    with autocast("cuda"):
-        # image = pipe(prompt, guidance_scale=7.5, num_inference_steps=n_iterations, height=512, width=512)["sample"][0]  
-        image = pipe(prompt, guidance_scale=7.5, num_inference_steps=n_iterations, height=new_height, width=new_width)["sample"][0]  
+    with torch.cuda.amp.autocast(True):
+        image = pipe(prompt, guidance_scale=7.5, num_inference_steps=n_iterations, height=512, width=512)["sample"][0]  
+        # image = pipe(prompt, guidance_scale=7.5, num_inference_steps=n_iterations, height=new_height, width=new_width)["sample"][0]  
+        # image = image.resize((width, height))
+        # print('final_height', height, 'final_width', width)
 
-        image = image.resize((width, height))
         filename = prompt[0:20].replace(" ", "_")
         filename = re.sub(r'\W+', '', filename)
         print(f"Saved image to {filename}")

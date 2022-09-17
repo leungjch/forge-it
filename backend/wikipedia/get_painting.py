@@ -33,8 +33,18 @@ class PaintingPicker:
                 for painting in self.paintings[style]:
                     try:
                         artist, title = painting.title().replace('-', ' ').split('_', 1)
+                        if artist in self.bad_artists:
+                            continue
                     except:
                         print("failed on", painting)
+
+                    from PIL import Image, ImageOps
+                    import base64
+                    from io import BytesIO
+                    image = Image.open(f'./wikiart/byartist/{}')
+                    width, height = image.size
+
+
                     if not os.path.isdir(f'./wikiart/byartist/{artist}'):
                         os.mkdir(f'./wikiart/byartist/{artist}')
                     shutil.copyfile(f'./wikiart/{style}/{painting}', f'./wikiart/byartist/{artist}/{title}')
@@ -88,13 +98,17 @@ class PaintingPicker:
         import base64
         from io import BytesIO
         image = Image.open(img_path)
-        image = ImageOps.contain(image, (512,512))
+
+        width, height = image.size
+        
+        # image = self.crop_into_square(image)
+
+        image = ImageOps.contain(image, (512, 512))
 
         buffer = BytesIO()
         image.save(buffer, format="PNG")
         image_bytes = buffer.getvalue()
         image_b64_str = f"data:image/png;base64,{base64.b64encode(image_bytes).decode('utf-8')}"
-        width, height = image.size
 
         return {
             "artist": artist, 
@@ -145,7 +159,6 @@ class PaintingPicker:
             return w.page(s, auto_suggest = False)
         except w.DisambiguationError as e:
             return w.page(e.options[0], auto_suggest = False)
-
     
     def get_artist_style_section(self, page):
         sections = page.sections
@@ -163,5 +176,18 @@ class PaintingPicker:
         else:
             print("Failed to get section")
             return ''
+
+    
+    def crop_into_square(image):
+        
+        width, height = image.size
+
+        if width > height:
+            image = image.crop((width // 2 - height // 2, 0, width // 2 + height // 2, height))
+        elif width < height:
+            image = image.crop((0, height // 2 - width // 2, width, height // 2 - width //2))
+        
+        return image.resize((512, 512))
+
 
 # p = PaintingPicker()

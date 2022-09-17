@@ -16,7 +16,7 @@ def process():
     source_width = data['source_width']
     source_height = data['source_height']
     with lock:
-        results = generate_image(prompt, 1, n_iterations, source_height, source_width)
+        results = generate_image(prompt, 1, n_iterations, height=source_height, width=source_width)
     return jsonify(results)
 
 if __name__ == '__main__':

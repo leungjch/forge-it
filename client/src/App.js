@@ -16,7 +16,7 @@ import { sendChatMessage, sendGetPaintingRequest, sendLikeForgery, sendPromptReq
 
 import forgerBackground from "./resources/forgers-background.png";
 import detectiveBackground from "./resources/detectives-background.png";
-import  "./resources/IndieFlower-Regular.ttf"
+import "./resources/IndieFlower-Regular.ttf"
 
 function App() {
   const [varThatNeedHooks, setVar] = useState({});
@@ -61,13 +61,13 @@ function App() {
 
   const handleLikePainting = (painting_id) => {
     // Set that user liked the painting
-    const isLike = true;
+    var isLike = true;
     setGeneratedImages(
       generatedImages.map((item) => {
         const liked = !item.liked
         if (item.id == painting_id) {
-          return { ...item, liked };
           isLike = liked;
+          return { ...item, liked };
         } else {
           return item;
         }
@@ -88,6 +88,40 @@ function App() {
       )
     }
   }
+
+  const handleLikeCounter = (forgery_id, new_likes) => {
+    setGeneratedImages(
+      generatedImages.map((item) => {
+        if (item.id == forgery_id) {
+          const likes = new_likes
+          return { ...item, likes };
+        } else {
+          return item;
+        }
+      })
+    );
+  }
+
+  const [[x, y], setXY] = useState([0, 0]);
+  const [[imgWidth, imgHeight], setSize] = useState([0, 0]);
+  const [showMagnifier, setShowMagnifier] = useState(false);
+
+  // function ImageMagnifier({
+  //   src,
+  //   width,
+  //   height,
+  //   magnifierHeight = 100,
+  //   magnifieWidth = 100,
+  //   zoomLevel = 1.5
+  // }) {
+  //   const [[x, y], setXY] = useState([0, 0]);
+  //   const [[imgWidth, imgHeight], setSize] = useState([0, 0]);
+  //   const [showMagnifier, setShowMagnifier] = useState(false);
+  //   return (
+
+  //   );
+  // }
+
 
   useEffect(() => {
     webSocket.onopen = (event) => {
@@ -120,6 +154,9 @@ function App() {
           setStyleInfo(message.data['style_summary'])
           setStyleName(message.data['style'])
           break;
+
+        case "RECEIVE_LIKE":
+          handleLikeCounter(message.data['forgery_id'], message.data['likes'])
 
         case "RECEIVE_CHAT_MESSAGE":
           divRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -160,26 +197,90 @@ function App() {
         <Container fluid={true}>
           <Row style={{ backgroundColor: "rgba(232, 216, 197, .85)", height: "6vh", width: "100vw" }}>
             <Col sm={2}>
-              <p style={{ marginTop: "2px", fontFamily:"IndieFlower", fontWeight:"bolder", fontSize:"130%" }}>Forger</p>
+              <p style={{ marginTop: "2px", fontFamily: "IndieFlower", fontWeight: "bolder", fontSize: "130%" }}>Forger</p>
             </Col>
             <Col sm={8}>
-              <p style={{ marginTop: "2px", fontFamily:"IndieFlower", fontWeight:"bolder", fontSize:"130%" }} class="d-flex justify-content-center">Timer</p>
+              <p style={{ marginTop: "2px", fontFamily: "IndieFlower", fontWeight: "bolder", fontSize: "130%" }} class="d-flex justify-content-center">Timer</p>
             </Col>
             <Col sm={2}>
-            <Button className="d-flex align-items-end" style={{ backgroundColor: "#78320a", border: "#78320a", fontSize: "70%" }} onClick={() => { sendGetPaintingRequest(webSocket, username) }}>New round</Button>
+              <Button style={{ float: "right", backgroundColor: "#78320a", border: "#78320a", fontFamily: "IndieFlower", fontWeight: "bolder", fontSize: "90%", marginTop: "2px" }} class="d-flex justify-content-end" onClick={() => { sendGetPaintingRequest(webSocket, username) }}>New round</Button>
             </Col>
           </Row>
           <Row style={{ height: "93vh", width: "100vw" }}>
             <Col sm={4} style={{ backgroundColor: "rgba(250, 233, 212, .75)", height: "100%" }}>
-              <label style={{ fontSize: "100%", fontFamily:"IndieFlower", fontWeight:"bolder", }} class="d-flex justify-content-center">Source painting</label>
+              <label style={{ fontSize: "100%", fontFamily: "IndieFlower", fontWeight: "bolder", }} class="d-flex justify-content-center">Source painting</label>
 
               {/* source pic */}
-              <div style={{ width: "120%", height: "30%"}} className="img-wrapper"  class="d-flex justify-content-center" >
-                <img style={{ maxHeight: "100%", maxWidth: "100%" }} src={sourceImage} alt="" className="hover-zoom"/>
-              </div>
+              {/* <div style={{ width: "120%", height: "30%" }} className="img-wrapper" class="d-flex justify-content-center" >
+                <img style={{ maxHeight: "100%", maxWidth: "100%" }} src={sourceImage} alt="" className="hover-zoom" />
+              </div> */}
 
-              <label style={{ fontSize: "130%", fontFamily:"IndieFlower", fontWeight:"bolder" }}>Gallery</label>
-              <div style={{ width: "100%", height: "40%", overflowY: "auto", position: "relative" }} className="flex-container wrap">
+              {/* <div
+                style={{
+                  position: "relative",
+                  height: 120%,
+                  width: 30%
+                }}
+              >
+                <img
+                  src={sourceImage}
+                  style={{ height: height, width: width }}
+                  onMouseEnter={(e) => {
+                    // update image size and turn-on magnifier
+                    const elem = e.currentTarget;
+                    const { width, height } = elem.getBoundingClientRect();
+                    setSize([width, height]);
+                    setShowMagnifier(true);
+                  }}
+                  onMouseMove={(e) => {
+                    // update cursor position
+                    const elem = e.currentTarget;
+                    const { top, left } = elem.getBoundingClientRect();
+
+                    // calculate cursor position on the image
+                    const x = e.pageX - left - window.pageXOffset;
+                    const y = e.pageY - top - window.pageYOffset;
+                    setXY([x, y]);
+                  }}
+                  onMouseLeave={() => {
+                    // close magnifier
+                    setShowMagnifier(false);
+                  }}
+                  alt={"img"}
+                />
+
+                <div
+                  style={{
+                    display: showMagnifier ? "" : "none",
+                    position: "absolute",
+
+                    // prevent magnifier blocks the mousemove event of img
+                    pointerEvents: "none",
+                    // set size of magnifier
+                    height: `${magnifierHeight}px`,
+                    width: `${magnifieWidth}px`,
+                    // move element center to cursor pos
+                    top: `${y - magnifierHeight / 2}px`,
+                    left: `${x - magnifieWidth / 2}px`,
+                    opacity: "1", // reduce opacity so you can verify position
+                    border: "1px solid lightgray",
+                    backgroundColor: "white",
+                    backgroundImage: `url('${sourceImage}')`,
+                    backgroundRepeat: "no-repeat",
+
+                    //calculate zoomed image size
+                    backgroundSize: `${imgWidth * zoomLevel}px ${imgHeight * zoomLevel
+                      }px`,
+
+                    //calculate position of zoomed image.
+                    backgroundPositionX: `${-x * zoomLevel + magnifieWidth / 2}px`,
+                    backgroundPositionY: `${-y * zoomLevel + magnifierHeight / 2}px`
+                  }}
+                ></div>
+              </div> */}
+
+              <label style={{ fontSize: "130%", fontFamily: "IndieFlower", fontWeight: "bolder" }}>Gallery</label>
+              <div style={{ width: "100%", height: "45%", overflowY: "auto", position: "relative" }} className="flex-container wrap">
                 {/* Generated image list, Gallery */}
                 {
                   generatedImages.map((generatedImage) =>
@@ -189,8 +290,9 @@ function App() {
                       <Card.Body>
                         <Card.Title style={{ fontSize: "70%" }}>
                           {generatedImage.prompt}
-                          {generatedImage.liked ? <AiFillHeart onClick={() => { handleLikePainting(generatedImage.id) }} class="d-flex justify-content-center" />
-                            : <AiOutlineHeart onClick={() => { handleLikePainting(generatedImage.id) }} class="d-flex justify-content-center" />}
+                          Has {generatedImage.likes} likes
+                          {generatedImage.liked ? <AiFillHeart style={{ color: "#ff2160" }} onClick={() => { handleLikePainting(generatedImage.id) }} class="d-flex justify-content-center" />
+                            : <AiOutlineHeart style={{ color: "#ff2160" }} onClick={() => { handleLikePainting(generatedImage.id) }} class="d-flex justify-content-center" />}
                         </Card.Title>
                         {/* <Card.Text>
                         {generatedImage.sender}'s forgery
@@ -204,16 +306,16 @@ function App() {
               </div>
 
               {/* Show artist info modal */}
-              <Button className="d-flex align-items-end" style={{ backgroundColor: "#78320a", border: "#78320a", fontSize: "70%", marginTop: "2px" }} onClick={handleShowArtistInfo}>
-                Learn about {artistName}
+              <Button className="d-flex align-items-end" style={{ marginTop: "3px", height: "5%", fontFamily: "IndieFlower", fontWeight: "bolder", fontSize: "100%", backgroundColor: "transparent", color: "#78320a", border: "#78320a" }} onClick={handleShowArtistInfo}>
+                Learn about {artistName} ...
               </Button>
-              <Button className="d-flex align-items-end" style={{ backgroundColor: "#78320a", border: "#78320a", fontSize: "70%" }} onClick={handleShowArtistInfo}>
-                Learn about {styleName}
+              <Button className="d-flex align-items-end" style={{ height: "5%", fontFamily: "IndieFlower", fontWeight: "bolder", fontSize: "100%", backgroundColor: "transparent", color: "#78320a", border: "#78320a" }} onClick={handleShowArtistInfo}>
+                Learn about {styleName} ...
               </Button>
 
             </Col>
 
-            <Col style={{marginTop:"3px"}} sm={6} className="text-center">
+            <Col style={{ marginTop: "3px" }} sm={6} className="text-center">
               {/* image placeholder */}
               <Row style={{ width: "100%", height: "50%" }}>
                 <Col style={{ width: "100%", height: "100%" }} >
@@ -236,10 +338,10 @@ function App() {
                 </InputGroup>
 
                 <div>
-                <Button style={{ width: "30%", backgroundColor: "#78320a", border: "#78320a", fontFamily:"IndieFlower", fontWeight:"bolder", fontSize:"130%"}} type="submit" onClick={() => {
-                  sendPromptRequest(webSocket, promptForm, username)
-                  setPromptForm("");
-                }}> Generate forgery!</Button>
+                  <Button style={{ width: "30%", backgroundColor: "#78320a", border: "#78320a", fontFamily: "IndieFlower", fontWeight: "bolder", fontSize: "130%" }} type="submit" onClick={() => {
+                    sendPromptRequest(webSocket, promptForm, username)
+                    setPromptForm("");
+                  }}> Generate forgery!</Button>
                 </div>
               </Row>
             </Col>
@@ -281,7 +383,7 @@ function App() {
           </Modal.Header>
           <Modal.Body>{artistInfo}</Modal.Body>
           <Modal.Footer>
-            <Button variant="primary" onClick={handleCloseArtistInfo}>
+            <Button style={{ backgroundColor: "#78320a", border: "#78320a", color: "white", fontFamily: "IndieFlower", fontWeight: "bolder" }} variant="primary" onClick={handleCloseArtistInfo}>
               Close
             </Button>
           </Modal.Footer>
@@ -294,7 +396,7 @@ function App() {
           </Modal.Header>
           <Modal.Body>{styleInfo}</Modal.Body>
           <Modal.Footer>
-            <Button variant="primary" onClick={handleCloseStyleInfo}>
+            <Button style={{ backgroundColor: "#78320a", border: "#78320a", color: "white", fontFamily: "IndieFlower", fontWeight: "bolder" }} variant="primary" onClick={handleCloseStyleInfo}>
               Close
             </Button>
           </Modal.Footer>
