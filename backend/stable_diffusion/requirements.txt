@@ -1,0 +1,6 @@
+flask-socketio
+flask
+diffusers
+transformers
+scipy
+Pillow
