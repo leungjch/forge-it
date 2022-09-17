@@ -165,17 +165,18 @@ function App() {
             <Col sm={8}>
               <p style={{ marginTop: "2px", fontFamily:"IndieFlower", fontWeight:"bolder", fontSize:"130%" }} class="d-flex justify-content-center">Timer</p>
             </Col>
-            <Col sm={2}></Col>
+            <Col sm={2}>
+            <Button className="d-flex align-items-end" style={{ backgroundColor: "#78320a", border: "#78320a", fontSize: "70%" }} onClick={() => { sendGetPaintingRequest(webSocket, username) }}>New round</Button>
+            </Col>
           </Row>
           <Row style={{ height: "93vh", width: "100vw" }}>
             <Col sm={4} style={{ backgroundColor: "rgba(250, 233, 212, .75)", height: "100%" }}>
               <label style={{ fontSize: "100%", fontFamily:"IndieFlower", fontWeight:"bolder", }} class="d-flex justify-content-center">Source painting</label>
 
               {/* source pic */}
-              <Row sm={10}  style={{ width: "120%", height: "30%"}} className="img-wrapper"  class="d-flex justify-content-center">
+              <div style={{ width: "120%", height: "30%"}} className="img-wrapper"  class="d-flex justify-content-center" >
                 <img style={{ maxHeight: "100%", maxWidth: "100%" }} src={sourceImage} alt="" className="hover-zoom"/>
-                {/* <Col sm={2}></Col> */}
-              </Row>
+              </div>
 
               <label style={{ fontSize: "130%", fontFamily:"IndieFlower", fontWeight:"bolder" }}>Gallery</label>
               <div style={{ width: "100%", height: "40%", overflowY: "auto", position: "relative" }} className="flex-container wrap">
@@ -209,7 +210,6 @@ function App() {
               <Button className="d-flex align-items-end" style={{ backgroundColor: "#78320a", border: "#78320a", fontSize: "70%" }} onClick={handleShowArtistInfo}>
                 Learn about {styleName}
               </Button>
-              <Button className="d-flex align-items-end" style={{ backgroundColor: "#78320a", border: "#78320a", fontSize: "70%" }} onClick={() => { sendGetPaintingRequest(webSocket, username) }}>New round</Button>
 
             </Col>
 
