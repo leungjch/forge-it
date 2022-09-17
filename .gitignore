@@ -1,4 +1,5 @@
 client/node_modules
+backend/server/node_modules
 backend/wikipedia/wikiart
 backend/wikipedia/sample-wikiart
 backend/stable_diffusion/output
