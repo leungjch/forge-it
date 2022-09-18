@@ -1,9 +1,7 @@
 import base64
-from bs4 import BeautifulSoup
-import flask
 from io import BytesIO
 import os
-from PIL import Image
+from PIL import Image, ImageOps
 import random
 import shutil
 import warnings
@@ -17,94 +15,58 @@ Extract the paintings archive, rename it to wikiart, place in same directory as 
 class PaintingPicker:
     def __init__(self):
         self.styles = os.listdir('./wikiart')
+        self.styles.remove("byartist")
         self.paintings = {}
-        # List of artists to ignore
-        # Some have < 3 paintings, so we ignore them
-        self.bad_artists = ['Roberto Matta', 'Christoffer Wilhelm Eckersberg', 'Lennart Rodhe', 'Thomas Kinkade', 'Kurt Schwitters', 'Doug Wheeler', 'Remedios Varo', 'Lygia Pape', 'Xu Beihong', 'Hans Bellmer', 'Carl Bloch', 'Vangel Naumovski', 'Donald Sultan', 'Jean Rene Bazaine', 'Arthur Lowe', 'Takashi Murakami', 'George Inness', 'Mel Bochner', 'Arman', 'Damien Hirst', 'Laszlo Moholy Nagy', 'Corneille', 'Marcel Barbeau', 'Thomas Downing', 'Jules Perahim', 'Sonya Rapoport', 'Marcel Broodthaers', 'Lorser Feitelson', 'Robert Delaunay', 'Sorin Ilfoveanu', 'Natalia Dumitresco', 'Gil Teixeira Lopes', 'Marin Gherasim', 'Paolo Scheggi', 'Isa Genzken', 'Frida Kahlo', 'James Turrell', 'Christian Schad', 'Roman Opalka', 'Otto Freundlich', 'Antoni Tapies', 'Philippe Halsman', 'Alberto Burri', 'Gerardo Dottori', 'Max Bill']
 
         for style in self.styles:
             self.paintings[style] = os.listdir(f'./wikiart/{style}')
 
-        if not os.path.isdir('./wikiart/byartist'):
-            print('Create ./wikiart/byartist directory')
-            # sort images by artist
-            os.mkdir('./wikiart/byartist')
-            for style in self.styles:
-                for painting in self.paintings[style]:
-                    try:
-                        artist, title = painting.title().replace('-', ' ').split('_', 1)
-                        if artist in self.bad_artists:
-                            continue
-                    except:
-                        print("failed on", painting)
-
-                    from PIL import Image, ImageOps
-                    import base64
-                    from io import BytesIO
-                    image = Image.open(f'./wikiart/byartist/{}')
-                    width, height = image.size
-
-
-                    if not os.path.isdir(f'./wikiart/byartist/{artist}'):
-                        os.mkdir(f'./wikiart/byartist/{artist}')
-                    shutil.copyfile(f'./wikiart/{style}/{painting}', f'./wikiart/byartist/{artist}/{title}')
-                    # now make sure that all of them work
-                    #if True:
-                        #artist_page = self.get_page(artist)
-                        #style_page = self.get_page(style)
-                        #print(artist_page)
+        self.good_paintings = []
 
         # This block ignore the bs4 GuessedAtParserWarning error,
         # which is only shown the first time wikipedia is called.
         # Wait nvm sometimes the warning still shows
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore')
-            style = 'Realism'
-            self.get_page(style)
+
+        # with warnings.catch_warnings():
+        #     warnings.simplefilter('ignore')
+        #     style = 'Realism'
+        #     self.get_page(style)
 
     def get_painting(self, style=''):
-        if not style:
-            style = random.choice(self.styles)
-    
-        redo = True
-        fail_count = 0
-        while redo:
-            try:
-                redo = False
-                painting = random.choice(self.paintings[style])
-                artist, title = painting.title().replace('-', ' ').split('_', 1)
-                if artist in self.bad_artists:
+        only_good_paintings = False
+        if only_good_paintings:
+            painting = random.choice(only_good_paintings)
+            artist, title = painting.split('/')
+            artist_page = self.get_page(artist)
+            style_page = self.get_page(style)
+            img_path = f'./wikiart/{artist}/{title}'
+        else:
+            if not style:
+                style = random.choice(self.styles)
+        
+            redo = True
+            fail_count = 0
+            while redo:
+                try:
+                    redo = False
+                    painting = random.choice(self.paintings[style])
+                    artist, title = painting.title().replace('-', ' ').split('_', 1)
+                    artist_page = self.get_page(artist)
+                    style_page = self.get_page(style)
+                    img_path = f'./wikiart/{style}/{painting}'
+                except:
                     redo = True
-                    continue
-                #print(artist, title)
-                artist_page = self.get_page(artist)
-                #print(artist_page.summary)
-
-                style_page = self.get_page(style)
-                #print(style_page.summary)
-
-                img_path = f'./wikiart/{style}/{painting}'
-                #print(img_path)
-            except:
-                redo = True
-                fail_count += 1
-                if fail_count == 4:
-                    # if it fails too many times, just do a different style
-                    fail_count = 0
-                    style = random.choice(self.styles)
+                    fail_count += 1
+                    if fail_count == 4:
+                        # if it fails too many times, just do a different style
+                        fail_count = 0
+                        style = random.choice(self.styles)
 
         # read the image and save to base64 string
-        from PIL import Image, ImageOps
-        import base64
-        from io import BytesIO
         image = Image.open(img_path)
-
         width, height = image.size
-        
         # image = self.crop_into_square(image)
-
         image = ImageOps.contain(image, (512, 512))
-
         buffer = BytesIO()
         image.save(buffer, format="PNG")
         image_bytes = buffer.getvalue()
@@ -112,7 +74,7 @@ class PaintingPicker:
 
         return {
             "artist": artist, 
-            "title": title,
+            "title": title.split('.')[0], # remove the file extension
             "style": style,
             "artist_summary": artist_page.summary,
             "style_summary": style_page.summary,
@@ -129,7 +91,7 @@ class PaintingPicker:
         if len(choices) < required:
             return {
                 "error": "not enough options"
-        }
+            }
 
         try:
             choices.remove(ignore)
@@ -161,31 +123,22 @@ class PaintingPicker:
             return w.page(e.options[0], auto_suggest = False)
     
     def get_artist_style_section(self, page):
-        sections = page.sections
-
-        for section in sections:
-            if any(x in section.lower() for x in ["style", "work", "art"] ):
-                return self.get_section(section)
+        # Returns empty string if no style section
+        for s in page.sections:
+            if any(x in s.lower() for x in ["style", "work", "art"]):
+                return page.section(s)
             else:
-                print("No style section")
+                print("No style section") # For debugging
                 return ''
 
-    def get_section(self, page, section):
-        if section in page.sections:
-            return page.section(section)
-        else:
-            print("Failed to get section")
-            return ''
-
-    
-    def crop_into_square(image):
+    def crop_into_square(self, image):
         
         width, height = image.size
 
         if width > height:
             image = image.crop((width // 2 - height // 2, 0, width // 2 + height // 2, height))
         elif width < height:
-            image = image.crop((0, height // 2 - width // 2, width, height // 2 - width //2))
+            image = image.crop((0, height // 2 - width // 2, width, height // 2 + width // 2))
         
         return image.resize((512, 512))
 

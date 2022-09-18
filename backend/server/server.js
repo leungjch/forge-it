@@ -9,6 +9,7 @@ const PORT = 8080;
 
 // sourcePainting is {width, height, painting_name(reveal at the end)}
 var sourcePainting = { "image_width": 512, "image_height": 512 }
+var sourcePaintingBytes
 
 // generatedPaintings is an map of {id, likes, username}
 var generatedPaintings = {}
@@ -20,6 +21,16 @@ const usernameGeneratorConfig = {
   length: 2,
   style: 'capital',
   separator: ''
+}
+
+function compare(a, b) {
+  if (a.likes < b.likes) {
+    return -1;
+  }
+  if (a.likes > b.likes) {
+    return 1;
+  }
+  return 0;
 }
 
 const wss = new WebSocketServer({ port: PORT });
@@ -41,7 +52,6 @@ wss.on('connection', function connection(ws) {
   ws.on('message', function message(raw_data) {
     const data = JSON.parse(raw_data)
     console.log('received message:', data);
-
     switch (data.event_type) {
       // A new user connects
       case "USER_CONNECT":
@@ -61,7 +71,9 @@ wss.on('connection', function connection(ws) {
             "sender": "Server",
             "data": ""
           },
-          "data": username
+          "data": {
+            username: username,
+            isForager: getRandomInt(2) == 0
         }))
 
         users.push(username)
@@ -89,8 +101,10 @@ wss.on('connection', function connection(ws) {
           'body': JSON.stringify({
             prompt: data.message.data,
             n_iterations: 20,
-            source_width: sourcePainting['image_width'],
-            source_height: sourcePainting['image_height'],
+            // source_width: sourcePainting['image_width'],
+            // source_height: sourcePainting['image_height'],
+            source_width: 512,
+            source_height: 512,
           })
         }).then((response) => response.json())
           .then((res) => {
@@ -109,7 +123,8 @@ wss.on('connection', function connection(ws) {
             // Save painting metadata
             generatedPaintings[res['id']] = {
               "username": data.message.sender,
-              "likes": 0
+              "likes": 0,
+              "image_bytes": res['image_bytes']
             }
           })
         break;
@@ -137,14 +152,15 @@ wss.on('connection', function connection(ws) {
             sourcePainting = {
               'image_width': res['image_width'],
               'image_height': res['image_height'],
-              'title': res['title']
+              'title': res['title'],
+              'image_bytes': res['image_b64_str']
             }
           })
         break;
 
       case 'SEND_LIKE_FORGERY':
         const like_forgery_id = data.data['forgery_id']
-        
+
         if (!(like_forgery_id in generatedPaintings)) {
           return
         }
@@ -158,7 +174,7 @@ wss.on('connection', function connection(ws) {
             "likes": generatedPaintings[like_forgery_id]['likes']
           },
           "message": {
-            'data':  "",
+            'data': "",
             'sender': "Server"
           }
         }))
@@ -177,12 +193,88 @@ wss.on('connection', function connection(ws) {
             "likes": generatedPaintings[unlike_forgery_id]['likes']
           },
           "message": {
-            'data':  "",
+            'data': "",
             'sender': "Server"
           }
         }))
         console.log(generatedPaintings)
         break;
+
+      // Forger requests to pass turn
+      case 'SEND_FORGERS_FINISHED':
+        // sort the paintings by likes
+        let array = []
+        for (const [key, value] of Object.entries(generatedPaintings)) {
+          let x = value;
+          x['id'] = key
+          array.push(x)
+        }
+
+
+        array.sort(function (a, b) {
+          var x = a.likes < b.likes ? 1 : -1;
+          return x;
+        });
+
+        const num_best = 3;
+
+        var best_paintings = [];
+
+        for (var i = 0; i < num_best; i++) {
+          if (i >= array.length) {
+            break;
+          }
+          best_paintings.push(array[i]);
+        }
+
+        best_paintings.push({
+          id: "0",
+          image_bytes: sourcePainting.image_bytes
+        })
+
+
+        broadcast(JSON.stringify({
+          event_type: "RECEIVE_FORGERS_FINISHED",
+          "data": {
+            best_paintings: best_paintings
+          },
+          message: {
+            data: "Forgers are finished!",
+            sender: "Server"
+          }
+        }))
+
+        break;
+
+      case 'SEND_DETECTIVES_FINISHED':
+        // Check the guess 
+        let forgery_id = data.data.forgery_id;
+        let res = {};
+        if (forgery_id == 0) {
+          res = {
+            event_type: "RECEIVE_DETECTIVES_FINISHED",
+            data: {
+              winner: "Detectives"
+            },
+            message: {
+              data: "Detectives found the true painting and win!",
+              sender: "Server"
+            }
+          }
+        } else {
+          res = {
+            event_type: "RECEIVE_DETECTIVES_FINISHED",
+            data: {
+              winner: "Forgers"
+            },
+            message: {
+              data: "Forgers successfully fooled the detectives and win!",
+              sender: "Server"
+            }
+          }
+        }
+        broadcast(JSON.stringify(res));
     }
-  });
-});
+
+  })
+});;

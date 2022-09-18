@@ -1,5 +1,12 @@
 client/node_modules
 backend/server/node_modules
-backend/wikipedia/wikiart
-backend/wikipedia/sample-wikiart
 backend/stable_diffusion/output
+backend/stable_diffusion/__pycache__
+backend/stable_diffusion/venv_stable_diffusion
+backend/wikipedia/wikiart
+backend/wikipedia/wikiart_backup
+backend/wikipedia/wikiart-2
+backend/wikipedia/wikiart.zip
+backend/wikipedia/sample-wikiart
+backend/wikipedia/__pycache__
+backend/wikipedia/venv_wikipedia

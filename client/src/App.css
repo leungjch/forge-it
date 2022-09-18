@@ -50,7 +50,15 @@ img.hover-zoom {
   /* width: 100%; */
 }
 img.hover-zoom:hover {
-  transform: scale(2) translateX(5vw) translateY(5vh);
+  transform: scale(1.25) translateX(1vw) ;
+}
+
+img.hover-zoom2 {
+  transition: all 0.3s ease 0s;
+  /* width: 100%; */
+}
+img.hover-zoom2:hover {
+  transform: scale(1.25);
 }
 
 .flex-container {
