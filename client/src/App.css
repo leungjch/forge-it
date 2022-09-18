@@ -72,3 +72,8 @@ img.hover-zoom2:hover {
    url("./resources/IndieFlower-Regular.ttf") format("truetype");
   font-weight: 10;
   }
+
+  .my-modal {
+    width: 60vw;
+    max-width: 60vw;
+} 

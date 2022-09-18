@@ -21,7 +21,7 @@ class PaintingPicker:
         for style in self.styles:
             self.paintings[style] = os.listdir(f'./wikiart/{style}')
 
-        self.good_paintings = []
+        self.good_paintings = ["Cubism/albert-gleizes_houses-in-a-valley-1910.jpg", "Impressionism/alfred-sisley_a-path-in-louveciennes-1876.jpg", "Impressionism/alfred-sisley_banks-of-the-loing-1885.jpg", "Impressionism/antoine-blanchard_arc-de-triomphe.jpg", "Impressionism/camille-pissarro_girl-tending-a-cow-in-pasture-1874.jpg", "Impressionism/camille-pissarro_girl-tending-a-cow-in-pasture-1874.jpg", "Romanticism/anton-melbye_the-eddystone-lighthouse-1846.jpg", "Romanticism/caspar-david-friedrich_the-wanderer-above-the-sea-of-fog.jpg", "Romanticism/edwin-henry-landseer_doubtful-crumbs.jpg", "Pointillism/camille-pissarro_paul-emile-pissarro-1890.jpg", "Impressionism/frits-thaulow_french-river-landscape-with-a-stone-bridge.jpg", "Impressionism/pierre-auguste-renoir_faisans-canapetiere-et-grives-1902.jpg"]
 
         # This block ignore the bs4 GuessedAtParserWarning error,
         # which is only shown the first time wikipedia is called.
@@ -32,14 +32,22 @@ class PaintingPicker:
         #     style = 'Realism'
         #     self.get_page(style)
 
-    def get_painting(self, style=''):
-        only_good_paintings = False
+    def test_all(self):
+        for painting in self.good_paintings:
+            self.get_painting(painting)
+
+ 
+    def get_painting(self, style='', fix=''):
+        only_good_paintings = True
         if only_good_paintings:
-            painting = random.choice(only_good_paintings)
-            artist, title = painting.split('/')
+            style, painting = random.choice(self.good_paintings).split('/')
+            if fix:
+                style, painting = fix.split('/')
+            # print(style, painting)
+            img_path = f'./wikiart/{style}/{painting}'
+            artist, title = painting.title().replace('-', ' ').split('_', 1)
             artist_page = self.get_page(artist)
             style_page = self.get_page(style)
-            img_path = f'./wikiart/{artist}/{title}'
         else:
             if not style:
                 style = random.choice(self.styles)
@@ -72,6 +80,8 @@ class PaintingPicker:
         image_bytes = buffer.getvalue()
         image_b64_str = f"data:image/png;base64,{base64.b64encode(image_bytes).decode('utf-8')}"
 
+        
+
         return {
             "artist": artist, 
             "title": title.split('.')[0], # remove the file extension
@@ -79,6 +89,7 @@ class PaintingPicker:
             "artist_summary": artist_page.summary,
             "style_summary": style_page.summary,
             "artist_style_summary": self.get_artist_style_section(artist_page),
+            "other_paintings": self.get_arists_paintings(artist, 3, title),
             "image_path": img_path, 
             "image_b64_str": image_b64_str,
             "image_width": width,
@@ -98,7 +109,7 @@ class PaintingPicker:
         except:
             pass
 
-        ret = {"paintings": []}
+        ret = []
         titles = random.sample(choices, count)
         for title in titles:
             img_path = f'./wikiart/byartist/{artist}/{title}'
@@ -108,7 +119,7 @@ class PaintingPicker:
             image.save(buffer, format="PNG")
             image_bytes = buffer.getvalue()
             image_b64_str = f"data:image/png;base64,{base64.b64encode(image_bytes).decode('utf-8')}"
-            ret["paintings"].append({
+            ret.append({
                 "title": title,
                 "image_path": img_path,
                 "image_b64_str": image_b64_str
@@ -143,4 +154,6 @@ class PaintingPicker:
         return image.resize((512, 512))
 
 
-# p = PaintingPicker()
+p = PaintingPicker()
+p.get_painting()
+p.test_all()

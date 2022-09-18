@@ -6,6 +6,10 @@ import { STABLE_DIFFUSION_URL, WIKIPEDIA_SERVER_URL } from './constants.js';
 
 const PORT = 8080;
 
+function getRandomInt(max) {
+  return Math.floor(Math.random() * max);
+}
+
 
 // sourcePainting is {width, height, painting_name(reveal at the end)}
 var sourcePainting = { "image_width": 512, "image_height": 512 }
@@ -73,8 +77,8 @@ wss.on('connection', function connection(ws) {
           },
           "data": {
             username: username,
-            isForager: getRandomInt(2) == 0
-        }))
+            isForger: getRandomInt(2) == 0
+        }}));
 
         users.push(username)
         break;

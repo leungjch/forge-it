@@ -19,6 +19,9 @@ import detectiveBackground from "./resources/detectives-background.png";
 import "./resources/IndieFlower-Regular.ttf"
 import cryGif from "./resources/cry.gif"
 import cheerGif from "./resources/cheer.gif"
+import clipboard from "./resources/clipboard.png"
+import clipboard2 from "./resources/clipboard2.png"
+import detectiveFigure from "./resources/detective.png"
 
 import ImageMagnifier from "./zoom.js";
 
@@ -46,6 +49,7 @@ function App() {
     const [styleInfo, setStyleInfo] = useState("")
     const [styleName, setStyleName] = useState("")
     const [artistStyleInfo, setArtistStyleInfo] = useState("")
+    const [artistOtherPaintings, setArtistOtherPaintings] = useState([])
 
     const [detectiveChoose, setDetectiveChoose] = useState(false)
     const [forgersBestPaintings, setForgersBestPaintings] = useState([])
@@ -130,7 +134,7 @@ function App() {
     }
 
     const handleImage = () => {
-        return detectiveChoose ? detectiveBackground : forgerBackground
+        return (detectiveChoose || !isForger) ? detectiveBackground : forgerBackground
     }
 
     const handleWinner = () => {
@@ -177,6 +181,7 @@ function App() {
                     setStyleInfo(message.data['style_summary'])
                     setStyleName(message.data['style'])
                     setArtistStyleInfo(message.data['artist_style_summary'])
+                    setArtistOtherPaintings(message.data['other_paintings'])
                     break;
 
                 case "RECEIVE_LIKE":
@@ -231,40 +236,129 @@ function App() {
         return (
 
             <div style={{ backgroundImage: `url(${handleImage()})`, backgroundSize: "50%" }}>
-                {!detectiveChoose && isForger &&
-
+                {/* Detective view */}
+                {!detectiveChoose && !isForger &&
                     <Container fluid={true}>
-                        <Row style={{ backgroundColor: "rgba(232, 216, 197, .85)", height: "6vh", width: "100vw" }}>
+                        <Row style={{ backgroundColor: "rgba(186, 209, 227, .85)", width: "100vw", height: "6vh" }}>
                             <Col sm={2}>
-                                <p style={{ marginTop: "2px", fontFamily: "IndieFlower", fontWeight: "bolder", fontSize: "130%" }}>Forger</p>
+                                <p style={{ marginTop: "2px", fontFamily: "IndieFlower", fontWeight: "bolder", fontSize: "130%" }}>Detective</p>
                             </Col>
                             <Col sm={8}>
-                                <p style={{ marginTop: "2px", fontFamily: "IndieFlower", fontWeight: "bolder", fontSize: "130%" }} class="d-flex justify-content-center">Timer 10 : 00</p>
+                                <p style={{ marginTop: "2px", fontFamily: "IndieFlower", fontWeight: "bolder", fontSize: "130%" }} className="d-flex justify-content-center"></p>
                             </Col>
                             <Col sm={2}>
-                                <Button style={{ float: "right", backgroundColor: "#78320a", border: "#78320a", fontFamily: "IndieFlower", fontWeight: "bolder", fontSize: "90%", marginTop: "2px" }} class="d-flex justify-content-end" onClick={() => {
+                                <Button style={{ float: "right", backgroundColor: "#06508a", border: "#78320a", fontFamily: "IndieFlower", fontWeight: "bolder", fontSize: "90%", marginTop: "2px" }} className="d-flex justify-content-end" onClick={() => {
+                                    setGeneratedImages([])
+                                    setCenterImage("")
+                                    sendGetPaintingRequest(webSocket, username); setDetectiveChoose(false);
+
+                                }}>New round</Button>
+                                <Button style={{ float: "right", marginRight:"2px", backgroundColor: "#78320a", border: "#78320a", fontFamily: "IndieFlower", fontWeight: "bolder", fontSize: "90%", marginTop: "2px" }} className="d-flex justify-content-end" onClick={() => {
+                                    setIsForger(true)
+                                }}>Forger</Button>
+
+                                {/* <Button style={{ float: "right", backgroundColor: "#a85c19", border: "#a85c19", fontFamily: "IndieFlower", fontWeight: "bolder", fontSize: "90%", marginTop: "2px", marginRight: "3px" }} className="d-flex justify-content-end" onClick={() => { sendForgersFinished(webSocket) }}>Done!</Button> */}
+                            </Col>
+                        </Row>
+                        <Row style={{ width: "100vw", height: "93vh" }}>
+                            <Col sm={2}>
+                                <label style={{ fontSize: "300%", fontFamily: "IndieFlower", fontWeight: "bolder", marginTop:"10px" }} className="d-flex flex-row-reverse">While you wait, some Info about...</label>
+                            </Col>
+                            <Col sm={8} style={{backgroundImage: `url(${clipboard})`, backgroundSize: "auto 100%", backgroundRepeat: "no-repeat", height: "100%" }} >
+                                <Row style={{ height: "100%" }}>
+                                    <Col sm={3} style={{}}></Col>
+                                    <Col sm={6} style={{}}>
+                                        {/* <Row style={{height:"20vh"}}></Row>
+                                        <Row style={{height:"53vh", maxHeight:"53vh"}}>
+                                        <h1>About the artist: {artistName}</h1>
+                                        {artistInfo}
+                                        <h1>About the art movement: {styleName} </h1>
+                                                    {styleInfo}
+
+                                        </Row>
+                                        <Row style={{height:"20vh"}}></Row> */}
+                                        <Row style={{height:"18vh"}}></Row>
+                                        <Row style={{ overflowY: "auto", position: "relative", height:"57vh"}}>
+                                            <Col style={{maxHeight:"80%"}}>
+                                                
+                                                <Row>
+                                                    <h1>About the artist: {artistName}</h1>
+                                                    {artistInfo}
+                                                </Row>
+
+                                                <Row>
+                                                    <h1>About the art movement: {styleName} </h1>
+                                                    {styleInfo}
+                                                </Row>
+
+
+                                                <Row  className="d-flex justify-content-evenly align-items-center">
+                                                    <h1>Artist's Works</h1>
+                                                    {
+                                                        artistOtherPaintings.map((generatedImage) => (
+                                                            // <Card style={{ width: "19%", height: "19vw" }}>
+                                                            //     <Card.Body>
+                                                            //         <Card.Img style={{ marginBottom: "0px" }} className="hover-zoom" src={generatedImage.image_b64_str} />
+                                                            //     </Card.Body>
+                                                            // </Card>
+                                                            <img src={generatedImage.image_b64_str} />
+                                                        ))
+                                                    }
+                                                </Row> 
+                                            </Col> 
+                                        </Row> 
+                                        <Row style={{height:"14vh"}}></Row>
+                                    </Col>
+                                    <Col sm={3} style={{}}></Col>
+                                </Row>
+                            </Col>
+
+                            <Col sm={2} style={{overflow:"hidden"}}>
+                                <Row style={{height:"60vh"}}></Row>
+                                <Row style={{overflow:"hidden"}}>
+                                <img style={{overflow:"hidden", height:"200px", width:"150px", float:"inline-end"}} src={detectiveFigure} class="d-flex align-items-end" />
+                                </Row>
+                            </Col>
+                        </Row>
+                    </Container>
+                }
+                {/* Forger view */}
+                {!detectiveChoose && isForger &&
+                    <Container fluid={true}>
+                        <Row style={{ backgroundColor: "rgba(232, 216, 197, .9)", height: "6vh", width: "100vw" }}>
+                            <Col sm={3}>
+                                <p style={{ marginTop: "2px", fontFamily: "IndieFlower", fontWeight: "bolder", fontSize: "130%" }}>Forger</p>
+                            </Col>
+                            <Col sm={6}>
+                                <p style={{ marginTop: "2px", fontFamily: "IndieFlower", fontWeight: "bolder", fontSize: "130%" }} className="d-flex justify-content-center"></p>
+                            </Col>
+                            <Col sm={3}>
+                                <Button style={{ float: "right", backgroundColor: "#78320a", border: "#78320a", fontFamily: "IndieFlower", fontWeight: "bolder", fontSize: "90%", marginTop: "2px" }} className="d-flex justify-content-end" onClick={() => {
                                     sendGetPaintingRequest(webSocket, username)
                                     setGeneratedImages([])
                                     setCenterImage("")
                                 }}>New round</Button>
-                                <Button style={{ float: "right", backgroundColor: "#a85c19", border: "#a85c19", fontFamily: "IndieFlower", fontWeight: "bolder", fontSize: "90%", marginTop: "2px", marginRight: "3px" }} class="d-flex justify-content-end" onClick={() => { sendForgersFinished(webSocket) }}>Done!</Button>
+                                <Button style={{ float: "right", backgroundColor: "#a85c19", border: "#a85c19", fontFamily: "IndieFlower", fontWeight: "bolder", fontSize: "90%", marginTop: "2px" }} className="d-flex justify-content-end" onClick={() => { sendForgersFinished(webSocket) }}>Done!</Button>
+                                <Button style={{ float: "right", backgroundColor: "#06508a", border: "#78320a", fontFamily: "IndieFlower", fontWeight: "bolder", fontSize: "90%", marginTop: "2px", marginRight: "3px" }} className="d-flex justify-content-end" onClick={() => {
+                                    setIsForger(false)
+                                }}>Detective</Button>
                             </Col>
                         </Row>
                         <Row style={{ height: "93vh", width: "100vw" }}>
-                            <Col sm={4} style={{ backgroundColor: "rgba(250, 233, 212, .75)", height: "100%" }}>
-                                <label style={{ fontSize: "100%", fontFamily: "IndieFlower", fontWeight: "bolder", }} class="d-flex justify-content-center">Source painting</label>
+                            <Col sm={4} style={{ backgroundColor: "rgba(250, 233, 212, 0.8)", height: "100%" }}>
+                                <label style={{ fontSize: "200%", fontFamily: "IndieFlower", fontWeight: "bolder", }} className="d-flex justify-content-center">Source painting</label>
 
                                 {/* source pic */}
-                                <div class="d-flex justify-content-center">
+                                <div className="d-flex justify-content-center">
                                     <ImageMagnifier
                                         src={sourceImage}
                                     />
                                 </div>
 
-                                <label style={{ fontSize: "130%", fontFamily: "IndieFlower", fontWeight: "bolder" }}>Forgers' Gallery</label>
+                                <label style={{ fontSize: "200%", fontFamily: "IndieFlower", fontWeight: "bolder" }}>Forgers' Gallery</label>
                                 <div style={{ width: "100%", height: "45%", overflowY: "auto", position: "relative" }} className="flex-container wrap">
 
-                                    {/* <div style={{ width: "120%", height: "30%" }} className="img-wrapper" class="d-flex justify-content-center" >
+                                    {/* <div style={{ width: "120%", height: "30%" }} className="img-wrapper" className="d-flex justify-content-center" >
                                     <img style={{ maxHeight: "100%", maxWidth: "100%" }} src={sourceImage} alt="" className="hover-zoom" />
                                     </div> */}
 
@@ -273,18 +367,18 @@ function App() {
                                         generatedImages.map((generatedImage) =>
 
                                             <Card style={{ width: "33%", height: "14vw" }}>
-                                                <Card.Img src={"data:image/png;base64," + generatedImage.image_bytes} className="hover-zoom2" />
+                                                <Card.Img style={{ border: "1px solid #555" }} src={"data:image/png;base64," + generatedImage.image_bytes} className="hover-zoom2" />
                                                 <Card.Body>
                                                     <Card.Title style={{ fontSize: "70%", height: "3px" }}>
                                                         {generatedImage.prompt}
-                                                    </Card.Title>
-                                                    <Card.Text style={{ fontSize: "80%", color: "#ff2160" }}>
+                                                        {" "}
                                                         {generatedImage.liked ?
-                                                            <AiFillHeart onClick={() => { handleLikePainting(generatedImage.id) }} />
-                                                            : <AiOutlineHeart onClick={() => { handleLikePainting(generatedImage.id) }} />}
+                                                            <AiFillHeart style={{color: "#ff2160"}} onClick={() => { handleLikePainting(generatedImage.id) }} />
+                                                            : <AiOutlineHeart style={{color: "#ff2160"}} onClick={() => { handleLikePainting(generatedImage.id) }} />}
+                                                    </Card.Title>
+                                                    {/* <Card.Text style={{ fontSize: "100%", color: "#ff2160" }}>
                                                         {/* {generatedImage.likes} */}
-
-                                                    </Card.Text>
+                                                    {/* </Card.Text> */} 
                                                     {/* <Card.Text>
                                                         {generatedImage.sender}'s forgery
                                                     </Card.Text> */}
@@ -297,10 +391,10 @@ function App() {
                                 </div>
 
                                 {/* Show artist info modal */}
-                                <Button className="d-flex align-items-end" style={{ marginTop: "3px", height: "5%", fontFamily: "IndieFlower", fontWeight: "bolder", fontSize: "110%", backgroundColor: "transparent", color: "#78320a", border: "#78320a" }} onClick={handleShowArtistInfo}>
+                                <Button className="d-flex align-items-end" style={{ marginTop: "3px", height: "5%", fontFamily: "IndieFlower", fontWeight: "bolder", fontSize: "150%", backgroundColor: "transparent", color: "#78320a", border: "#78320a" }} onClick={handleShowArtistInfo}>
                                     Learn about {artistName} ...
                                 </Button>
-                                <Button className="d-flex align-items-end" style={{ height: "5%", fontFamily: "IndieFlower", fontWeight: "bolder", fontSize: "110%", backgroundColor: "transparent", color: "#78320a", border: "#78320a" }} onClick={handleShowStyleInfo}>
+                                <Button className="d-flex align-items-end" style={{ height: "5%", fontFamily: "IndieFlower", fontWeight: "bolder", fontSize: "150%", backgroundColor: "transparent", color: "#78320a", border: "#78320a" }} onClick={handleShowStyleInfo}>
                                     Learn about {styleName} ...
                                 </Button>
                             </Col>
@@ -309,7 +403,7 @@ function App() {
                                 {/* image placeholder */}
                                 <Row style={{ width: "100%", height: "60%" }}>
                                     <Col style={{ width: "100%", height: "100%" }} >
-                                        <img style={{ maxHeight: "100%", maxWidth: "100%" }} src={centerImage == "" ? detectiveBackground : centerImage} />
+                                        <img style={{ maxHeight: "100%", maxWidth: "100%" }} src={centerImage} />
                                     </Col>
                                 </Row>
 
@@ -338,7 +432,7 @@ function App() {
                             <Col sm={2} style={{ height: "100%", bottom: 0, position: "relative" }}>
                                 {/* Chat box */}
                                 {/* check out how to stick to the bottom tmr */}
-                                <Row style={{ backgroundColor: "rgba(250, 233, 212, .7)", overflowY: "auto", height: "93%", bottom: 0, position: "relative" }}>
+                                <Row style={{ backgroundColor: "rgba(250, 233, 212, 0.8)", overflowY: "auto", height: "93%", bottom: 0, position: "relative" }}>
 
                                     <div>Username: {username}</div>
                                     <div className='display-linebreak'>{serverMessage}</div>
@@ -366,14 +460,20 @@ function App() {
 
                     </Container>
                 }
-                <Modal show={showArtistInfo} onHide={handleCloseArtistInfo} animation={false}>
+                <Modal show={showArtistInfo}
+                    dialogClassName="my-modal"
+                    onHide={handleCloseArtistInfo} animation={false}>
                     <Modal.Header closeButton>
                         <Modal.Title>{artistName}</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
                         {artistInfo}
-                        Additional info....
                         {artistStyleInfo}
+                        {
+                            artistOtherPaintings.map((generatedImage) => (
+                                <Card.Img style={{ marginBottom: "0px" }} src={generatedImage.image_b64_str} />
+                            ))
+                        }
                     </Modal.Body>
                     <Modal.Footer>
                         <Button style={{ backgroundColor: "#78320a", border: "#78320a", color: "white", fontFamily: "IndieFlower", fontWeight: "bolder" }} variant="primary" onClick={handleCloseArtistInfo}>
@@ -383,7 +483,9 @@ function App() {
                 </Modal>
 
 
-                <Modal show={showStyleInfo} onHide={handleCloseStyleInfo} animation={false}>
+                <Modal show={showStyleInfo} onHide={handleCloseStyleInfo}
+                    dialogClassName="my-modal"
+                    animation={false}>
                     <Modal.Header closeButton>
                         <Modal.Title>{styleName}</Modal.Title>
                     </Modal.Header>
@@ -394,6 +496,7 @@ function App() {
                         <Button style={{ backgroundColor: "#78320a", border: "#78320a", color: "white", fontFamily: "IndieFlower", fontWeight: "bolder" }} variant="primary" onClick={handleCloseStyleInfo}>
                             Close
                         </Button>
+
                     </Modal.Footer>
                 </Modal>
 
@@ -406,21 +509,21 @@ function App() {
                                 <p style={{ marginTop: "2px", fontFamily: "IndieFlower", fontWeight: "bolder", fontSize: "130%" }}>Detective</p>
                             </Col>
                             <Col sm={8}>
-                                <p style={{ marginTop: "2px", fontFamily: "IndieFlower", fontWeight: "bolder", fontSize: "130%" }} class="d-flex justify-content-center">Timer 10 : 00</p>
+                                <p style={{ marginTop: "2px", fontFamily: "IndieFlower", fontWeight: "bolder", fontSize: "130%" }} className="d-flex justify-content-center"></p>
                             </Col>
                             <Col sm={2}>
-                                <Button style={{ float: "right", backgroundColor: "#06508a", border: "#78320a", fontFamily: "IndieFlower", fontWeight: "bolder", fontSize: "90%", marginTop: "2px" }} class="d-flex justify-content-end" onClick={() => {
+                                <Button style={{ float: "right", backgroundColor: "#06508a", border: "#78320a", fontFamily: "IndieFlower", fontWeight: "bolder", fontSize: "90%", marginTop: "2px" }} className="d-flex justify-content-end" onClick={() => {
 
                                     setGeneratedImages([])
                                     setCenterImage("")
                                     sendGetPaintingRequest(webSocket, username); setDetectiveChoose(false);
 
                                 }}>New round</Button>
-                                {/* <Button style={{ float: "right", backgroundColor: "#a85c19", border: "#a85c19", fontFamily: "IndieFlower", fontWeight: "bolder", fontSize: "90%", marginTop: "2px", marginRight: "3px" }} class="d-flex justify-content-end" onClick={() => { sendForgersFinished(webSocket) }}>Done!</Button> */}
+                                {/* <Button style={{ float: "right", backgroundColor: "#a85c19", border: "#a85c19", fontFamily: "IndieFlower", fontWeight: "bolder", fontSize: "90%", marginTop: "2px", marginRight: "3px" }} className="d-flex justify-content-end" onClick={() => { sendForgersFinished(webSocket) }}>Done!</Button> */}
                             </Col>
                         </Row>
                         <Row style={{ width: "100vw", height: "10vh" }}>
-                            <label style={{ fontSize: "500%", fontFamily: "IndieFlower", fontWeight: "bolder", backgroundColor: "rgba(186, 209, 227, .85)" }} class="d-flex justify-content-center align-items-end">Which is the real one ?</label>
+                            <label style={{ fontSize: "500%", fontFamily: "IndieFlower", fontWeight: "bolder", backgroundColor: "rgba(186, 209, 227, .85)" }} className="d-flex justify-content-center align-items-end">Which is the real one ?</label>
                         </Row>
                         <Row style={{ width: "100vw", height: "83vh" }} className="d-flex justify-content-evenly align-items-center">
                             {

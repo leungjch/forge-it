@@ -10,3 +10,7 @@ backend/wikipedia/wikiart.zip
 backend/wikipedia/sample-wikiart
 backend/wikipedia/__pycache__
 backend/wikipedia/venv_wikipedia
+sample-wikiart/
+wikiart-2/
+wikiart_backup/
+htn-2022.zip

@@ -23,7 +23,7 @@ export default function ImageMagnifier({
     >
       <img
         src={src}
-        style={{ height: height, width: width, maxHeight: "28vh", maxWidth:"28vw"}}
+        style={{ height: height, width: width, maxHeight: "28vh", maxWidth:"28vw", border: "0px solid #555", filter: "drop-shadow(2px 2px 2px #222)"}}
         onMouseEnter={(e) => {
           // update image size and turn-on magnifier
           const elem = e.currentTarget;
